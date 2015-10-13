@@ -59,14 +59,6 @@ guidata(hObject, handles);
 str='Please load a file';
 set(handles.edit3,'string',str);
 set(handles.popupmenu1,'string','slice');
-% global pflag;
-% pflag=0;
-
-
-
-% UIWAIT makes ImageSegmentation wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
-
 
 % --- Outputs from this function are returned to the command line.
 function varargout = ImageSegmentation_OutputFcn(hObject, eventdata, handles) %Êä³öµ½matlab½çÃæ£¬²»ÐèÒª
@@ -77,8 +69,6 @@ function varargout = ImageSegmentation_OutputFcn(hObject, eventdata, handles) %Ê
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
-
-
 
 % --------------------------------------------------------------------
 function savepicture_Callback(hObject, eventdata, handles)%±£´æ¼ü
@@ -161,6 +151,7 @@ set(handles.edit3,'string',str);
 
 global segOutline;
 segOutline=zeros(sz(1),sz(2));
+segOutline=im2double(segOutline);
 
 
 
@@ -289,6 +280,7 @@ global volume;
 % global pflag;
 global segOutline;
 global slct;
+slct=get(handles.popupmenu1,'value');
 if slct>1
  slct=slct-1;
 end
@@ -310,6 +302,7 @@ global volume;
 % global pflag;
 global segOutline;
 global slct;
+slct=get(handles.popupmenu1,'value');
 sz=size(volume);
 if slct<sz(3)
 slct=slct+1;
