@@ -29,11 +29,11 @@ function varargout = ImageSegmentation(varargin)%%do not edit
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @ImageSegmentation_OpeningFcn, ...
-                   'gui_OutputFcn',  @ImageSegmentation_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @ImageSegmentation_OpeningFcn, ...
+    'gui_OutputFcn',  @ImageSegmentation_OutputFcn, ...
+    'gui_LayoutFcn',  [] , ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -64,7 +64,7 @@ set(handles.slice,'string','slice');
 
 % --- Outputs from this function are returned to the command line.
 %output in matlab command window, do need to edit
-function varargout = ImageSegmentation_OutputFcn(hObject, eventdata, handles) 
+function varargout = ImageSegmentation_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -93,7 +93,7 @@ function openfile_ClickedCallback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 str='Opening...Please wait.';
-set(handles.edit3,'string',str);
+%set(handles.edit3,'string',str);
 [filename, pathname] = uigetfile('*.nd2','select the .nd2 file');
 data = bfopen([ pathname,filename]);
 series = data{1, 1};
@@ -110,7 +110,7 @@ for z = 1:z_size
 end
 volume = volume(:,:,1:4:end); % 1:green; 2:green-yellow; 3:nir; 4:sum% save_nii(make_nii(volume,[1 1 1], [0 0 0], 4),'B.nii.gz')
 sz=size(volume);
-set(handles.slice,'string', {1:1:sz(3)});%set the selection of popupmenu by number 1 to sz(3) 
+set(handles.slice,'string', {1:1:sz(3)});%set the selection of popupmenu by number 1 to sz(3)
 
 global evalue;
 evalue=max(volume,[],3);% get the maxvalue of each pixel from all slice
@@ -131,7 +131,7 @@ imshow(evalue,[]);
 
 %%image enhancement by average the dataset
 % sum_all=ones(sz(3),1)/sz(3);
-% 
+%
 % evalue=reshape(reshape(volume,[],sz(3))*sum_all,[sz(1:2) 1]);%???????????????????????????????????
 % evalue1=floor(evalue/16);%?????????????????????????????????????????????????????
 % evalue2=uint8(evalue1);
@@ -178,13 +178,13 @@ global rect;
 slct=get(handles.slice,'value');
 slice=volume(:,:,slct);%get a slice for volume dataset
 if cflag==1%means image have been cut
-slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-slice=slicecut;
+    slicecut=slice(rect(1):rect(2),rect(3):rect(4));
+    slice=slicecut;
 end
 axes(handles.axes5);
 k=max(max(slice));
 if sflag==1
-slice=slice+segOutline*k;
+    slice=slice+segOutline*k;
 end
 imshow(slice,[0,k]);
 
@@ -210,7 +210,7 @@ label=[label N];%first version, fixed 4 seeds and 2 types of labels.
 str='Choose points on the round';
 set(handles.edit3,'string',str);
 axes(handles.axes);
-while(i<n)   
+while(i<n)
     [x_p,y_p]=ginput(1);
     x_p=floor(x_p);
     y_p=floor(y_p);
@@ -218,7 +218,7 @@ while(i<n)
     plot(x_p,y_p,'g.','MarkerSize',5);
     seed=[seed,sub2ind([X Y],y_p,x_p)];
     i=i+1;
-%     pause(1);   
+    %     pause(1);
 end
 hold off
 
@@ -228,8 +228,8 @@ slice=volume(:,:,slct);
 global cflag;
 global rect;
 if cflag==1
-slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-slice=slicecut;
+    slicecut=slice(rect(1):rect(2),rect(3):rect(4));
+    slice=slicecut;
 end
 
 [mask,probabilities] = random_walker(evalue,seed,label);
@@ -249,13 +249,25 @@ segOutline(x_mask)=1;
 segOutline(y_mask)=1;
 axes(handles.axes);
 outcome1=evalue+segOutline*max(max(evalue));
-imshow(outcome1,[]);
+imshow(outcome1,[]);         %outline in original picture
 axes(handles.axes5);
 outcome2=slice+segOutline*max(max(slice));
-imshow(outcome2,[]);
-
+imshow(outcome2,[]);        %outline in second picture
 global sflag;
 sflag=1;
+
+figure;
+D = bwdist(segOutline,'euclidean');
+subplot(2,2,1);subimage(mat2gray(D));
+hold on, imcontour(D);
+subplot(2,2,2);
+hold on, contour(D);
+subplot(2,2,3);
+hold on, imagesc(D);
+subplot(2,2,4);
+[px,py] = gradient(D);[c, h] = contour(D, [3, 3]);  %temporaryly set v = 3;
+hold on, quiver(px,py), hold off
+
 
 % --- Executes on button press in average.
 function average_Callback(hObject, eventdata, handles)
@@ -269,12 +281,13 @@ global rect;
 slct=get(handles.slice,'value');
 slice=volume(:,:,slct);
 if cflag==1
-slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-slice=slicecut;
+    slicecut=slice(rect(1):rect(2),rect(3):rect(4));
+    slice=slicecut;
 end
 num=sum(segOutline);
 value=sum(segOutline.*slice)/num;
 set(handles.text6,'string', num2str(value));
+
 
 
 % --- Executes on button press in back.
@@ -290,21 +303,21 @@ global cflag
 global sflag;
 slct=get(handles.slice,'value');
 if slct>1
- slct=slct-1;
+    slct=slct-1;
 end
 set(handles.slice,'value',slct);
 
 slice=volume(:,:,slct);
 if cflag==1
-slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-slice=slicecut;
+    slicecut=slice(rect(1):rect(2),rect(3):rect(4));
+    slice=slicecut;
 end
 axes(handles.axes5);
 k=max(max(slice));
 if sflag==1
-slice=slice+segOutline*k;
+    slice=slice+segOutline*k;
 end
-imshow(slice,[0,k]);   
+imshow(slice,[0,k]);
 
 
 
@@ -322,20 +335,20 @@ global sflag;
 slct=get(handles.slice,'value');
 sz=size(volume);
 if slct<sz(3)
-slct=slct+1;
+    slct=slct+1;
 end
 set(handles.slice,'value',slct);
 slice=volume(:,:,slct);
 if cflag==1
-slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-slice=slicecut;
+    slicecut=slice(rect(1):rect(2),rect(3):rect(4));
+    slice=slicecut;
 end
 axes(handles.axes5);
 k=max(max(slice));
 if sflag==1
-slice=slice+segOutline*k;
+    slice=slice+segOutline*k;
 end
-imshow(slice,[0,k]);   
+imshow(slice,[0,k]);
 
 
 % --- Executes on button press in cut.
@@ -363,14 +376,17 @@ global savevalue;
 savevalue={savevalue;evalue};
 evaluecut=evalue(rect(1):rect(2),rect(3):rect(4));
 evalue=evaluecut;
-imshow(evalue,[]);
+evalue = imadjust(evalue);
+imshow(evalue,[]); %????????
+%imagesc(evalue);
 slct=get(handles.slice,'value');
 slice=volume(:,:,slct);
 slicecut=slice(rect(1):rect(2),rect(3):rect(4));
 slice=slicecut;
 axes(handles.axes5);
-imshow(slice,[]);
 
+%imshow(slice,[]);      %???????
+imagesc(slice);
 
 global cflag;%ture:cflag=1,operate on cut iamge
 cflag=1;
