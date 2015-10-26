@@ -53,13 +53,16 @@ function ImageSegmentation_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to ImageSegmentation (see VARARGIN)
+%set (handles.axes,'Xtick','off','Ytick','off');
+%set (handles.axes5,'Xtick','off','Ytick','off');
+%set(handles.axes,'visible','off');
 
 % Choose default command line output for ImageSegmentation
 handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 str='Please load a file';
-set(handles.edit3,'string',str);
+%set(handles.edit3,'string',str);
 set(handles.slice,'string','slice');
 
 % --- Outputs from this function are returned to the command line.
@@ -76,12 +79,18 @@ varargout{1} = handles.output;
 
 % --- Executes during object creation, after setting all properties.
 function slice_CreateFcn(hObject, eventdata, handles)
+
 % hObject    handle to popupmenu2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
+
+%set (handles.axes,'Xtick','off','Ytick','off');
+%set (handles.axes5,'Xtick','off','Ytick','off');
+%set(handles.axes,'visible','off');
+
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -143,7 +152,7 @@ imshow(evalue,[]);
 
 
 str='Finshed.';
-set(handles.edit3,'string',str);
+%set(handles.edit3,'string',str);
 
 %%initialize some global value
 global segOutline; % A 2-D 0-1 matrix stand for the result of segmentation, the edge consist of pixels which value are 1
@@ -196,7 +205,7 @@ function selectpoint_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 str='Choose points in the round';
-set(handles.edit3,'string',str);
+%set(handles.edit3,'string',str);
 global evalue;
 [X,Y]=size(evalue);
 
@@ -208,7 +217,7 @@ N=ones(1,n-1);
 label=[label N];%first version, fixed 4 seeds and 2 types of labels.
 
 str='Choose points on the round';
-set(handles.edit3,'string',str);
+%set(handles.edit3,'string',str);
 axes(handles.axes);
 while(i<n)
     [x_p,y_p]=ginput(1);
@@ -257,17 +266,49 @@ global sflag;
 sflag=1;
 
 figure;
+subplot(3,3,1);
+imshow(segOutline);title('segOutline');
+subplot(3,3,2);
 D = bwdist(segOutline,'euclidean');
-subplot(2,2,1);subimage(mat2gray(D));
-hold on, imcontour(D);
-subplot(2,2,2);
-hold on, contour(D);
-subplot(2,2,3);
-hold on, imagesc(D);
-subplot(2,2,4);
-[px,py] = gradient(D);[c, h] = contour(D, [3, 3]);  %temporaryly set v = 3;
+imagesc(D);title('imshow D');
+subplot(3,3,3);
+subimage(mat2gray(D));
+imcontour(D);
+title('D imcontour');
+subplot(3,3,4);
+contour(D);title('D contour');
+subplot(3,3,5);
+imagesc(D);title('D imagesc');
+subplot(3,3,6);
+[px,py] = gradient(D);
+[c, h] = contour(D, [3, 3]);  %temporaryly set v = 3;
+title('D gradient');
+%level1 = 3, level2 = 3  
+% C = [level1 x1 x2 x3 ... level2 x2 x2 x3 ...;
+%      pairs1 y1 y2 y3 ... pairs2 y2 y2 y3 ...]
+subplot(3,3,7);
+[C, H] = contour(D, [5, 1]);
 hold on, quiver(px,py), hold off
 
+a1 = round(c);
+figure; plot(a1);
+a2 = a1(:,2:c(2,1)+1);
+a3 = zeros(1,c(2,1));
+
+a8 = zeros(max(a1(:)));
+for i = 1:length(a1)
+    a8(a1(1,i),a1(2,i))=1;
+end
+figure;imshow(a8);
+
+for i = 1: c(2,1)
+   a3(i)=sqrt(px(a2(1,i),a2(2,i))^2+py(a2(1,i),a2(2,i))^2);
+   a4(i)=px(a2(1,i),a2(2,i))^2;   
+   a5(i)=py(a2(1,i),a2(2,i))^2;
+   
+end
+figure; plot(a4);
+figure; plot(a5);
 
 % --- Executes on button press in average.
 function average_Callback(hObject, eventdata, handles)
@@ -360,8 +401,9 @@ function cut_Callback(hObject, eventdata, handles)
 global volume
 global evalue;
 global rect;
+%global slice;
 str='Choose a rectangle with two point';
-set(handles.edit3,'string',str);
+%set(handles.edit3,'string',str);
 axes(handles.axes);
 [rx_1,ry_1]=ginput(1);
 rx_1=floor(rx_1);ry_1=floor(ry_1);
