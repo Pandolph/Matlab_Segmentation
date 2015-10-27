@@ -22,7 +22,7 @@ function varargout = ImageSegmentation(varargin)%%do not edit
 
 % Edit the above text to modify the response to help ImageSegmentation
 
-% Last Modified by GUIDE v2.5 16-Oct-2015 14:50:17
+% Last Modified by GUIDE v2.5 26-Oct-2015 19:50:23
 
 % set(gcf,'units','normalized')%?????,??????????;
 
@@ -56,8 +56,19 @@ function ImageSegmentation_OpeningFcn(hObject, eventdata, handles, varargin)
 %set (handles.axes,'Xtick','off','Ytick','off');
 %set (handles.axes5,'Xtick','off','Ytick','off');
 %set(handles.axes,'visible','off');
-
+% axes(handles.axes)%select axes
+% set(handles.axes,'visible','off');
+% axes(handles.axes)%select axes
+% set(handles.axes,'visible','off');
 % Choose default command line output for ImageSegmentation
+
+% ha=axes('units','normalized','position',[0 0 1 1]);
+% uistack(ha,'down')
+% II=imread('med-x.jpg');
+% image(II)
+% colormap gray
+% set(ha,'handlevisibility','off','visible','off');
+
 handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
@@ -245,9 +256,9 @@ end
 mask=reshape(mask,X,Y);
 
 %%inflation
-D=[0 1 0,1 1 1,0 1 0];
-mask=imerode(mask,D);
-mask=imclose(mask,D);
+% D=[0 1 0,1 1 1,0 1 0];
+% mask=imerode(mask,D);
+% mask=imclose(mask,D);
 
 [fx,fy]=gradient(mask);
 x_mask=find(fx);
@@ -291,7 +302,7 @@ subplot(3,3,7);
 hold on, quiver(px,py), hold off
 
 a1 = round(c);
-figure; plot(a1);
+%figure; plot(a1);
 a2 = a1(:,2:c(2,1)+1);
 a3 = zeros(1,c(2,1));
 
@@ -299,16 +310,12 @@ a8 = zeros(max(a1(:)));
 for i = 1:length(a1)
     a8(a1(1,i),a1(2,i))=1;
 end
-figure;imshow(a8);
+%figure;imshow(a8);
 
 for i = 1: c(2,1)
    a3(i)=sqrt(px(a2(1,i),a2(2,i))^2+py(a2(1,i),a2(2,i))^2);
-   a4(i)=px(a2(1,i),a2(2,i))^2;   
-   a5(i)=py(a2(1,i),a2(2,i))^2;
-   
 end
-figure; plot(a4);
-figure; plot(a5);
+
 
 % --- Executes on button press in average.
 function average_Callback(hObject, eventdata, handles)
@@ -466,3 +473,27 @@ global sflag;
 sflag=0;
 
 savevalue=savevalue{1};
+
+
+% --- Executes during object creation, after setting all properties.
+function axes_CreateFcn(hObject, eventdata, handles)
+set(hObject,'xTick',[]);
+set(hObject,'ytick',[]);
+set(hObject,'box','on');
+% hObject    handle to axes (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: place code in OpeningFcn to populate axes
+
+
+% --- Executes during object creation, after setting all properties.
+function axes5_CreateFcn(hObject, eventdata, handles)
+set(hObject,'xTick',[]);
+set(hObject,'ytick',[]);
+set(hObject,'box','on');
+% hObject    handle to axes5 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: place code in OpeningFcn to populate axes5
