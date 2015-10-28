@@ -276,45 +276,60 @@ imshow(outcome2,[]);        %outline in second picture
 global sflag;
 sflag=1;
 
-figure;
-subplot(3,3,1);
-imshow(segOutline);title('segOutline');
-subplot(3,3,2);
+% figure;
+% subplot(3,3,1);
+% imshow(segOutline);title('segOutline');
+% subplot(3,3,2);
+% D = bwdist(segOutline,'euclidean');
+% imagesc(D);title('imshow D');
+% subplot(3,3,3);
+% subimage(mat2gray(D));
+% imcontour(D);
+% title('D imcontour');
+% subplot(3,3,4);
+% contour(D);title('D contour');
+% subplot(3,3,5);
+% imagesc(D);title('D imagesc');
+% subplot(3,3,6);
+% [px,py] = gradient(D);
+% [c, h] = contour(D, [3, 3]);  %temporaryly set v = 3;
+% title('D gradient');
+% %level1 = 3, level2 = 3
+% % C = [level1 x1 x2 x3 ... level2 x2 x2 x3 ...;
+% %      pairs1 y1 y2 y3 ... pairs2 y2 y2 y3 ...]
+% subplot(3,3,7);
+% [C, H] = contour(D, [5, 1]);
+% hold on, quiver(px,py), hold off
+% a1 = round(c);
+% %figure; plot(a1);
+% a2 = a1(:,2:c(2,1)+1);
+% a3 = zeros(1,c(2,1));
+% a8 = zeros(max(a1(:)));
+% for i = 1:length(a1)
+%     a8(a1(1,i),a1(2,i))=1;
+% end
+% %figure;imshow(a8);
+% % set the distance 5
+% for i = 1: c(2,1)
+% %   a3(i)=sqrt(px(a2(1,i),a2(2,i))^2+py(a2(1,i),a2(2,i))^2);
+% end
+
 D = bwdist(segOutline,'euclidean');
-imagesc(D);title('imshow D');
-subplot(3,3,3);
-subimage(mat2gray(D));
-imcontour(D);
-title('D imcontour');
-subplot(3,3,4);
-contour(D);title('D contour');
-subplot(3,3,5);
-imagesc(D);title('D imagesc');
-subplot(3,3,6);
 [px,py] = gradient(D);
-[c, h] = contour(D, [3, 3]);  %temporaryly set v = 3;
-title('D gradient');
-%level1 = 3, level2 = 3  
-% C = [level1 x1 x2 x3 ... level2 x2 x2 x3 ...;
-%      pairs1 y1 y2 y3 ... pairs2 y2 y2 y3 ...]
-subplot(3,3,7);
-[C, H] = contour(D, [5, 1]);
-hold on, quiver(px,py), hold off
-
+[c, h] = contour(D, [0, 0]);  %temporaryly set v = 0;
 a1 = round(c);
-%figure; plot(a1);
 a2 = a1(:,2:c(2,1)+1);
-a3 = zeros(1,c(2,1));
-
-a8 = zeros(max(a1(:)));
-for i = 1:length(a1)
-    a8(a1(1,i),a1(2,i))=1;
+gray = zeros(1,c(2,1));
+vector = 4;
+for i = 1:c(2,1)
+    positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
+    positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
+    gray(i) = evalue(round(positionX), round(positionY));
 end
-%figure;imshow(a8);
+%figure;plot(gray);title(vector);
 
-for i = 1: c(2,1)
-   a3(i)=sqrt(px(a2(1,i),a2(2,i))^2+py(a2(1,i),a2(2,i))^2);
-end
+
+
 
 
 % --- Executes on button press in average.
@@ -335,6 +350,20 @@ end
 num=sum(segOutline);
 value=sum(segOutline.*slice)/num;
 set(handles.text6,'string', num2str(value));
+for i = 1:length(volume(1,1,:))    
+    if cflag==1
+        slice=volume(:,:,i);
+        slicecut=slice(rect(1):rect(2),rect(3):rect(4));
+        slice=slicecut;
+    end
+    txt(i,2)= sum(segOutline.*slice)/num;
+    txt(i,1)= i;
+end
+fid = fopen('average.txt','wt');
+fprintf(fid,'%g\n',txt); %\n means next line
+fclose(fid);
+
+
 
 
 
