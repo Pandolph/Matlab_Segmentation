@@ -131,23 +131,18 @@ end
 volume = volume(:,:,1:4:end); % 1:green; 2:green-yellow; 3:nir; 4:sum% save_nii(make_nii(volume,[1 1 1], [0 0 0], 4),'B.nii.gz')
 sz=size(volume);
 set(handles.slice,'string', {1:1:sz(3)});%set the selection of popupmenu by number 1 to sz(3)
-
 global evalue;
 evalue=max(volume,[],3);% get the maxvalue of each pixel from all slice
-
 %%cut the maximum part of the image for the effect of histogram equalization
 maxvalue=max(max(max(evalue)));
 A=find(evalue>maxvalue/4);
 evalue(A)=maxvalue/4;
-
 evalue=medfilt2(evalue);%median filter, remove the white noise
-
 evalue_uint8=uint8(floor(evalue/16));
 evalue_hist=histeq(evalue_uint8,256);%histogram equalization the image 'evalue', make the image easier to read
 evalue=im2double(evalue_hist);
 axes(handles.axes);%the left axes
 imshow(evalue,[]);
-
 
 %%image enhancement by average the dataset
 % sum_all=ones(sz(3),1)/sz(3);
@@ -159,8 +154,6 @@ imshow(evalue,[]);
 % evalue=im2double(evalue3);
 % axes(handles.axes);
 % imshow(evalue,[]);
-
-
 
 str='Finshed.';
 %set(handles.edit3,'string',str);
@@ -215,32 +208,52 @@ function selectpoint_Callback(hObject, eventdata, handles)
 % hObject    handle to selectpoint (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-str='Choose points in the round';
+%str='Choose points in the round';
 %set(handles.edit3,'string',str);
+
+global label;
+global seed;
 global evalue;
 [X,Y]=size(evalue);
-
-i=0;
-n=4;%you can change the num of seeds
-seed=[];
-label=[0];
-N=ones(1,n-1);
-label=[label N];%first version, fixed 4 seeds and 2 types of labels.
-
-str='Choose points on the round';
-%set(handles.edit3,'string',str);
-axes(handles.axes);
-while(i<n)
-    [x_p,y_p]=ginput(1);
-    x_p=floor(x_p);
-    y_p=floor(y_p);
-    hold on
-    plot(x_p,y_p,'g.','MarkerSize',5);
-    seed=[seed,sub2ind([X Y],y_p,x_p)];
-    i=i+1;
-    %     pause(1);
+if ~isempty(label)
+    label = [0 label 1];
+    axes(handles.axes);
+    for i = 1:2
+        [x_p,y_p]=ginput(1);
+        x_p=floor(x_p);
+        y_p=floor(y_p);
+        hold on
+        plot(x_p,y_p,'g.','MarkerSize',5);
+        if i == 1
+            seed=[sub2ind([X Y],y_p,x_p),seed];
+        else
+            seed=[seed,sub2ind([X Y],y_p,x_p)];
+        end
+    end
+    hold off
+else
+    
+    i=0;
+    n=4;%you can change the num of seeds
+    seed=[];
+    label=[0];
+    N=ones(1,n-1);
+    label=[label N];%first version, fixed 4 seeds and 2 types of labels.
+    %str='Choose points on the round';
+    %set(handles.edit3,'string',str);
+    axes(handles.axes);
+    while(i<n)
+        [x_p,y_p]=ginput(1);
+        x_p=floor(x_p);
+        y_p=floor(y_p);
+        hold on
+        plot(x_p,y_p,'g.','MarkerSize',5);
+        seed=[seed,sub2ind([X Y],y_p,x_p)];
+        i=i+1;
+        %     pause(1);
+    end
+    hold off
 end
-hold off
 
 global volume;
 slct=get(handles.slice,'value');
@@ -254,12 +267,10 @@ end
 
 [mask,probabilities] = random_walker(evalue,seed,label);
 mask=reshape(mask,X,Y);
-
 %%inflation
 % D=[0 1 0,1 1 1,0 1 0];
 % mask=imerode(mask,D);
 % mask=imclose(mask,D);
-
 [fx,fy]=gradient(mask);
 x_mask=find(fx);
 y_mask=find(fy);
@@ -314,23 +325,22 @@ sflag=1;
 % %   a3(i)=sqrt(px(a2(1,i),a2(2,i))^2+py(a2(1,i),a2(2,i))^2);
 % end
 
-D = bwdist(segOutline,'euclidean');
-[px,py] = gradient(D);
-[c, h] = contour(D, [0, 0]);  %temporaryly set v = 0;
-a1 = round(c);
-a2 = a1(:,2:c(2,1)+1);
-gray = zeros(1,c(2,1));
-vector = 4;
-for i = 1:c(2,1)
-    positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
-    positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
-    gray(i) = evalue(round(positionX), round(positionY));
-end
+% D = bwdist(segOutline,'euclidean');
+% [px,py] = gradient(D);
+% [c, h] = contour(D, [0, 0]);  %temporaryly set v = 0;
+% a1 = round(c);
+% a2 = a1(:,2:c(2,1)+1);
+% gray = zeros(1,c(2,1));
+% vector = 4;
+% for i = 1:c(2,1)
+%     positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
+%     positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
+%     gray(i) = evalue(round(positionX), round(positionY));
+% end
+
+
+
 %figure;plot(gray);title(vector);
-
-
-
-
 
 % --- Executes on button press in average.
 function average_Callback(hObject, eventdata, handles)
@@ -350,7 +360,7 @@ end
 num=sum(segOutline);
 value=sum(segOutline.*slice)/num;
 set(handles.text6,'string', num2str(value));
-for i = 1:length(volume(1,1,:))    
+for i = 1:length(volume(1,1,:))
     if cflag==1
         slice=volume(:,:,i);
         slicecut=slice(rect(1):rect(2),rect(3):rect(4));
@@ -362,10 +372,6 @@ end
 fid = fopen('average.txt','wt');
 fprintf(fid,'%g\n',txt); %\n means next line
 fclose(fid);
-
-
-
-
 
 % --- Executes on button press in back.
 function back_Callback(hObject, eventdata, handles)
@@ -396,9 +402,6 @@ if sflag==1
 end
 imshow(slice,[0,k]);
 
-
-
-
 % --- Executes on button press in next.
 function next_Callback(hObject, eventdata, handles)
 % hObject    handle to next (see GCBO)
@@ -426,7 +429,6 @@ if sflag==1
     slice=slice+segOutline*k;
 end
 imshow(slice,[0,k]);
-
 
 % --- Executes on button press in cut.
 function cut_Callback(hObject, eventdata, handles)
@@ -462,14 +464,10 @@ slice=volume(:,:,slct);
 slicecut=slice(rect(1):rect(2),rect(3):rect(4));
 slice=slicecut;
 axes(handles.axes5);
-
 %imshow(slice,[]);      %???????
 imagesc(slice);
-
 global cflag;%ture:cflag=1,operate on cut iamge
 cflag=1;
-
-
 
 % --- Executes on button press in restart.
 function restart_Callback(hObject, eventdata, handles)
@@ -502,6 +500,10 @@ global sflag;
 sflag=0;
 
 savevalue=savevalue{1};
+global label;
+global seed;
+label =[0];
+seed=[];
 
 
 % --- Executes during object creation, after setting all properties.
