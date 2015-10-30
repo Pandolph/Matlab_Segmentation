@@ -140,7 +140,7 @@ evalue(A)=maxvalue/4;
 evalue=medfilt2(evalue);%median filter, remove the white noise
 evalue_uint8=uint8(floor(evalue/16));
 evalue_hist=histeq(evalue_uint8,256);%histogram equalization the image 'evalue', make the image easier to read
-evalue=im2double(evalue_hist);
+evalue=im2double(evalue_hist);  % change the vaule of evalue to (0,1)
 axes(handles.axes);%the left axes
 imshow(evalue,[]);
 
@@ -200,7 +200,6 @@ if sflag==1
     slice=slice+segOutline*k;
 end
 imshow(slice,[0,k]);
-
 
 
 % --- Executes on button press in selectpoint.
@@ -274,7 +273,6 @@ end
 
 global segOutline;
 
-
 % [fx,fy]=gradient(mask);
 % x_mask=find(fx);
 % y_mask=find(fy);
@@ -286,6 +284,12 @@ I=bwmorph(mask,'remove');
 I=~I;
 %figure;imshow(I);
 segOutline = I;
+
+segOutline(1,:)=1;
+segOutline(end,:)=1;
+segOutline(:,1)=1;
+segOutline(:,end)=1;
+segOutline = ~segOutline;
 
 axes(handles.axes);
 outcome1=evalue+segOutline*max(max(evalue));
@@ -334,22 +338,38 @@ sflag=1;
 % %   a3(i)=sqrt(px(a2(1,i),a2(2,i))^2+py(a2(1,i),a2(2,i))^2);
 % end
 
-% D = bwdist(segOutline,'euclidean');
-% [px,py] = gradient(D);
-% [c, h] = contour(D, [0, 0]);  %temporaryly set v = 0;
-% a1 = round(c);
-% a2 = a1(:,2:c(2,1)+1);
-% gray = zeros(1,c(2,1));
-% vector = 4;
+D = bwdist(segOutline,'euclidean');
+[px,py] = gradient(D);
+for j = 1: 5
+figure;
+[c, h] = contour(D, [j, j]);  %temporaryly set v = 0;
+axis equal;                     % equal axes
+a1 = round(c);
+a2 = a1(:,2:c(2,1)+1);
+gray = zeros(length(segOutline(1,:)),length(segOutline(:,1)));
+vector = 0;
+for i = 1:c(2,1)
+%    positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
+%    positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
+        positionX = a2(1,i);
+    positionY = a2(2,i);
+    gray (round(positionX), round(positionY)) = 1;
+end
+gray = flipud(gray);
+gray = rot90(gray,3);
+temp = evalue.*gray;
+nonzerovalue = temp(find(temp));
+disp(['mean = ',num2str(mean(nonzerovalue)),' v =',num2str(j)]);
+figure;
+%plot(nonzerovalue);
+
+%disp(num(find(temp)));
+end
+
 % for i = 1:c(2,1)
-%     positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
-%     positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
-%     gray(i) = evalue(round(positionX), round(positionY));
+% gray(i) = evalue(round(positionX), round(positionY));
 % end
-
-
-
-%figure;plot(gray);title(vector);
+% plot(gray);title(vector);
 
 % --- Executes on button press in average.
 function average_Callback(hObject, eventdata, handles)
