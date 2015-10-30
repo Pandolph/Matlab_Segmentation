@@ -266,18 +266,27 @@ if cflag==1
 end
 
 [mask,probabilities] = random_walker(evalue,seed,label);
-mask=reshape(mask,X,Y);
+%mask=reshape(mask,X,Y);
 %%inflation
 % D=[0 1 0,1 1 1,0 1 0];
 % mask=imerode(mask,D);
 % mask=imclose(mask,D);
-[fx,fy]=gradient(mask);
-x_mask=find(fx);
-y_mask=find(fy);
+
 global segOutline;
-segOutline=zeros(X,Y);
-segOutline(x_mask)=1;
-segOutline(y_mask)=1;
+
+
+% [fx,fy]=gradient(mask);
+% x_mask=find(fx);
+% y_mask=find(fy);
+% segOutline=zeros(X,Y);
+% segOutline(x_mask)=1;
+% segOutline(y_mask)=1;
+
+I=bwmorph(mask,'remove');
+I=~I;
+%figure;imshow(I);
+segOutline = I;
+
 axes(handles.axes);
 outcome1=evalue+segOutline*max(max(evalue));
 imshow(outcome1,[]);         %outline in original picture
@@ -468,6 +477,10 @@ axes(handles.axes5);
 imagesc(slice);
 global cflag;%ture:cflag=1,operate on cut iamge
 cflag=1;
+global seed;
+global label;
+seed = [];
+label = [];
 
 % --- Executes on button press in restart.
 function restart_Callback(hObject, eventdata, handles)
@@ -477,7 +490,9 @@ function restart_Callback(hObject, eventdata, handles)
 global volume;
 global evalue;
 global savevalue;
+if ~isempty(savevalue)
 evalue=savevalue{2};%forms some kind of stack
+end
 axes(handles.axes);
 imshow(evalue,[]);
 slct=get(handles.slice,'value');
