@@ -340,10 +340,11 @@ sflag=1;
 
 D = bwdist(segOutline,'euclidean');
 [px,py] = gradient(D);
-for j = 1: 5
+for j = 1: 30
 figure;
 [c, h] = contour(D, [j, j]);  %temporaryly set v = 0;
 axis equal;                     % equal axes
+close(figure(1));
 a1 = round(c);
 a2 = a1(:,2:c(2,1)+1);
 gray = zeros(length(segOutline(1,:)),length(segOutline(:,1)));
@@ -359,13 +360,27 @@ gray = flipud(gray);
 gray = rot90(gray,3);
 temp = evalue.*gray;
 nonzerovalue = temp(find(temp));
+nonzerovalue = nonzerovalue';
 disp(['mean = ',num2str(mean(nonzerovalue)),' v =',num2str(j)]);
-figure;
+%figure;
 %plot(nonzerovalue);
+
+if j == 1
+    numpixel = length(nonzerovalue);
+    finalmatrix = nonzerovalue;
+else
+    newmatrix = 1:numpixel;
+    newmatrix = round(newmatrix*length(nonzerovalue)/numpixel);
+    newnonzerovalue = nonzerovalue(newmatrix);
+    finalmatrix = [finalmatrix;newnonzerovalue];
+
+end
 
 %disp(num(find(temp)));
 end
-
+disp(finalmatrix);
+figure;
+imshow(finalmatrix);
 % for i = 1:c(2,1)
 % gray(i) = evalue(round(positionX), round(positionY));
 % end
