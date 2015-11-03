@@ -72,7 +72,7 @@ function ImageSegmentation_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
-str='Please load a file';
+%str='Please load a file';
 %set(handles.edit3,'string',str);
 set(handles.slice,'string','slice');
 
@@ -112,7 +112,7 @@ function openfile_ClickedCallback(hObject, eventdata, handles)
 % hObject    handle to openfile (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-str='Opening...Please wait.';
+%str='Opening...Please wait.';
 %set(handles.edit3,'string',str);
 [filename, pathname] = uigetfile('*.nd2','select the .nd2 file');
 data = bfopen([ pathname,filename]);
@@ -155,7 +155,7 @@ imshow(evalue,[]);
 % axes(handles.axes);
 % imshow(evalue,[]);
 
-str='Finshed.';
+%str='Finshed.';
 %set(handles.edit3,'string',str);
 
 %%initialize some global value
@@ -213,6 +213,8 @@ function selectpoint_Callback(hObject, eventdata, handles)
 global label;
 global seed;
 global evalue;
+global    myseed;  %used for plot
+
 [X,Y]=size(evalue);
 if ~isempty(label)
     label = [0 label 1];
@@ -221,12 +223,15 @@ if ~isempty(label)
         [x_p,y_p]=ginput(1);
         x_p=floor(x_p);
         y_p=floor(y_p);
-        hold on
-        plot(x_p,y_p,'g.','MarkerSize',5);
+        hold on        
         if i == 1
+            plot(x_p,y_p,'r.','MarkerSize',5);
             seed=[sub2ind([X Y],y_p,x_p),seed];
+            myseed = [myseed [0;x_p;y_p]];
         else
+            plot(x_p,y_p,'g.','MarkerSize',5);
             seed=[seed,sub2ind([X Y],y_p,x_p)];
+            myseed = [myseed [1;x_p;y_p]];
         end
     end
     hold off
@@ -234,6 +239,7 @@ else
     
     i=0;
     n=4;%you can change the num of seeds
+    myseed= [];
     seed=[];
     label=[0];
     N=ones(1,n-1);
@@ -246,12 +252,18 @@ else
         x_p=floor(x_p);
         y_p=floor(y_p);
         hold on
+        if i ==0
+            plot(x_p,y_p,'r.','MarkerSize',5);
+                    myseed = [myseed [0;x_p;y_p]];
+        else 
         plot(x_p,y_p,'g.','MarkerSize',5);
+                myseed = [myseed [1;x_p;y_p]];
+        end
         seed=[seed,sub2ind([X Y],y_p,x_p)];
         i=i+1;
         %     pause(1);
     end
-    hold off
+    %hold off
 end
 
 global volume;
@@ -292,8 +304,18 @@ segOutline(:,end)=1;
 segOutline = ~segOutline;
 
 axes(handles.axes);
+hold on 
 outcome1=evalue+segOutline*max(max(evalue));
 imshow(outcome1,[]);         %outline in original picture
+for i = 1:length(label)
+if myseed(1,i)==0
+    plot(myseed(2,i),myseed(3,i),'r.','MarkerSize',5);   
+else
+    plot(myseed(2,i),myseed(3,i),'g.','MarkerSize',5);
+end
+end
+hold off 
+
 axes(handles.axes5);
 outcome2=slice+segOutline*max(max(slice));
 imshow(outcome2,[]);        %outline in second picture
@@ -339,16 +361,16 @@ sflag=1;
 % end
 
 D = bwdist(segOutline,'euclidean');
-[px,py] = gradient(D);
+%[px,py] = gradient(D);
 for j = 1: 30
-figure;
+figure(10);
 [c, h] = contour(D, [j, j]);  %temporaryly set v = 0;
 axis equal;                     % equal axes
-close(figure(1));
+close(figure(10));
 a1 = round(c);
 a2 = a1(:,2:c(2,1)+1);
 gray = zeros(length(segOutline(1,:)),length(segOutline(:,1)));
-vector = 0;
+%vector = 0;
 for i = 1:c(2,1)
 %    positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
 %    positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
@@ -373,12 +395,11 @@ else
     newmatrix = round(newmatrix*length(nonzerovalue)/numpixel);
     newnonzerovalue = nonzerovalue(newmatrix);
     finalmatrix = [finalmatrix;newnonzerovalue];
-
 end
 
 %disp(num(find(temp)));
 end
-disp(finalmatrix);
+%disp(finalmatrix);
 figure;
 imshow(finalmatrix);
 % for i = 1:c(2,1)
@@ -497,7 +518,7 @@ plot(rx_2,ry_2,'r.','MarkerSize',5);
 hold off
 rect=[ry_1,ry_2,rx_1,rx_2];
 global savevalue;
-savevalue={savevalue;evalue};
+savevalue={savevalue;evalue}; 
 evaluecut=evalue(rect(1):rect(2),rect(3):rect(4));
 evalue=evaluecut;
 evalue = imadjust(evalue);
