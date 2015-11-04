@@ -22,7 +22,7 @@ function varargout = ImageSegmentation(varargin)%%do not edit
 
 % Edit the above text to modify the response to help ImageSegmentation
 
-% Last Modified by GUIDE v2.5 26-Oct-2015 19:50:23
+% Last Modified by GUIDE v2.5 04-Nov-2015 14:14:37
 
 % set(gcf,'units','normalized')%?????,??????????;
 
@@ -213,7 +213,7 @@ function selectpoint_Callback(hObject, eventdata, handles)
 global label;
 global seed;
 global evalue;
-global    myseed;  %used for plot
+global myseed;  %used for plot
 
 [X,Y]=size(evalue);
 if ~isempty(label)
@@ -235,8 +235,7 @@ if ~isempty(label)
         end
     end
     hold off
-else
-    
+else    
     i=0;
     n=4;%you can change the num of seeds
     myseed= [];
@@ -599,3 +598,16 @@ set(hObject,'box','on');
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: place code in OpeningFcn to populate axes5
+
+
+% --- Executes on button press in rollback.
+function rollback_Callback(hObject, eventdata, handles)
+% hObject    handle to rollback (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global label;
+global seed;
+global myseed;  %used for plot
+label = label(2:end-1);
+seed = seed(2:end-1);
+myseed = myseed(:,1:end-2);
