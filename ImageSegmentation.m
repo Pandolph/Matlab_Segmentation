@@ -176,8 +176,6 @@ global savevalue;%container saves evalue, used in function of restart
 savevalue=[];
 
 
-
-
 % --- Executes on selection change in popupmenu2.
 function slice_Callback(hObject, eventdata, handles)
 % hObject    handle to popupmenu2 (see GCBO)
@@ -223,7 +221,7 @@ if ~isempty(label)
         [x_p,y_p]=ginput(1);
         x_p=floor(x_p);
         y_p=floor(y_p);
-        hold on        
+        hold on
         if i == 1
             plot(x_p,y_p,'r.','MarkerSize',5);
             seed=[sub2ind([X Y],y_p,x_p),seed];
@@ -235,7 +233,7 @@ if ~isempty(label)
         end
     end
     hold off
-else    
+else
     i=0;
     n=4;%you can change the num of seeds
     myseed= [];
@@ -253,10 +251,10 @@ else
         hold on
         if i ==0
             plot(x_p,y_p,'r.','MarkerSize',5);
-                    myseed = [myseed [0;x_p;y_p]];
-        else 
-        plot(x_p,y_p,'g.','MarkerSize',5);
-                myseed = [myseed [1;x_p;y_p]];
+            myseed = [myseed [0;x_p;y_p]];
+        else
+            plot(x_p,y_p,'g.','MarkerSize',5);
+            myseed = [myseed [1;x_p;y_p]];
         end
         seed=[seed,sub2ind([X Y],y_p,x_p)];
         i=i+1;
@@ -295,25 +293,26 @@ I=bwmorph(mask,'remove');
 I=~I;
 %figure;imshow(I);
 segOutline = I;
-
 segOutline(1,:)=1;
 segOutline(end,:)=1;
 segOutline(:,1)=1;
 segOutline(:,end)=1;
 segOutline = ~segOutline;
 
+global newsegOutline;
+newsegOutline = Expand(segOutline);
 axes(handles.axes);
-hold on 
-outcome1=evalue+segOutline*max(max(evalue));
+hold on
+outcome1=evalue+newsegOutline*max(max(evalue));
 imshow(outcome1,[]);         %outline in original picture
 for i = 1:length(label)
-if myseed(1,i)==0
-    plot(myseed(2,i),myseed(3,i),'r.','MarkerSize',5);   
-else
-    plot(myseed(2,i),myseed(3,i),'g.','MarkerSize',5);
+    if myseed(1,i)==0
+        plot(myseed(2,i),myseed(3,i),'r.','MarkerSize',5);
+    else
+        plot(myseed(2,i),myseed(3,i),'g.','MarkerSize',5);
+    end
 end
-end
-hold off 
+hold off
 
 axes(handles.axes5);
 outcome2=slice+segOutline*max(max(slice));
@@ -362,41 +361,41 @@ sflag=1;
 D = bwdist(segOutline,'euclidean');
 %[px,py] = gradient(D);
 for j = 1: 30
-figure(10);
-[c, h] = contour(D, [j, j]);  %temporaryly set v = 0;
-axis equal;                     % equal axes
-close(figure(10));
-a1 = round(c);
-a2 = a1(:,2:c(2,1)+1);
-gray = zeros(length(segOutline(1,:)),length(segOutline(:,1)));
-%vector = 0;
-for i = 1:c(2,1)
-%    positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
-%    positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
+    figure(10);
+    [c, h] = contour(D, [j, j]);  %temporaryly set v = 0;
+    axis equal;                     % equal axes
+    close(figure(10));
+    a1 = round(c);
+    a2 = a1(:,2:c(2,1)+1);
+    gray = zeros(length(segOutline(1,:)),length(segOutline(:,1)));
+    %vector = 0;
+    for i = 1:c(2,1)
+        %    positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
+        %    positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
         positionX = a2(1,i);
-    positionY = a2(2,i);
-    gray (round(positionX), round(positionY)) = 1;
-end
-gray = flipud(gray);
-gray = rot90(gray,3);
-temp = evalue.*gray;
-nonzerovalue = temp(find(temp));
-nonzerovalue = nonzerovalue';
-disp(['mean = ',num2str(mean(nonzerovalue)),' v =',num2str(j)]);
-%figure;
-%plot(nonzerovalue);
-
-if j == 1
-    numpixel = length(nonzerovalue);
-    finalmatrix = nonzerovalue;
-else
-    newmatrix = 1:numpixel;
-    newmatrix = round(newmatrix*length(nonzerovalue)/numpixel);
-    newnonzerovalue = nonzerovalue(newmatrix);
-    finalmatrix = [finalmatrix;newnonzerovalue];
-end
-
-%disp(num(find(temp)));
+        positionY = a2(2,i);
+        gray (round(positionX), round(positionY)) = 1;
+    end
+    gray = flipud(gray);
+    gray = rot90(gray,3);
+    temp = evalue.*gray;
+    nonzerovalue = temp(find(temp));
+    nonzerovalue = nonzerovalue';
+    disp(['mean = ',num2str(mean(nonzerovalue)),' v =',num2str(j)]);
+    %figure;
+    %plot(nonzerovalue);
+    
+    if j == 1
+        numpixel = length(nonzerovalue);
+        finalmatrix = nonzerovalue;
+    else
+        newmatrix = 1:numpixel;
+        newmatrix = round(newmatrix*length(nonzerovalue)/numpixel);
+        newnonzerovalue = nonzerovalue(newmatrix);
+        finalmatrix = [finalmatrix;newnonzerovalue];
+    end
+    
+    %disp(num(find(temp)));
 end
 %disp(finalmatrix);
 figure;
@@ -405,6 +404,7 @@ imshow(finalmatrix);
 % gray(i) = evalue(round(positionX), round(positionY));
 % end
 % plot(gray);title(vector);
+
 
 % --- Executes on button press in average.
 function average_Callback(hObject, eventdata, handles)
@@ -415,14 +415,16 @@ global segOutline;
 global volume;
 global cflag;
 global rect;
+global newsegOutline;
 slct=get(handles.slice,'value');
 slice=volume(:,:,slct);
 if cflag==1
     slicecut=slice(rect(1):rect(2),rect(3):rect(4));
     slice=slicecut;
 end
-num=sum(segOutline);
-value=sum(segOutline.*slice)/num;
+
+num=sum(newsegOutline);
+value=sum(newsegOutline.*slice)/num;
 set(handles.text6,'string', num2str(value));
 for i = 1:length(volume(1,1,:))
     if cflag==1
@@ -430,7 +432,7 @@ for i = 1:length(volume(1,1,:))
         slicecut=slice(rect(1):rect(2),rect(3):rect(4));
         slice=slicecut;
     end
-    txt(i,2)= sum(segOutline.*slice)/num;
+    txt(i,2)= sum(newsegOutline.*slice)/num;
     txt(i,1)= i;
 end
 fid = fopen('average.txt','wt');
@@ -504,7 +506,7 @@ global volume
 global evalue;
 global rect;
 %global slice;
-str='Choose a rectangle with two point';
+%str='Choose a rectangle with two point';
 %set(handles.edit3,'string',str);
 axes(handles.axes);
 [rx_1,ry_1]=ginput(1);
@@ -517,7 +519,7 @@ plot(rx_2,ry_2,'r.','MarkerSize',5);
 hold off
 rect=[ry_1,ry_2,rx_1,rx_2];
 global savevalue;
-savevalue={savevalue;evalue}; 
+savevalue={savevalue;evalue};
 evaluecut=evalue(rect(1):rect(2),rect(3):rect(4));
 evalue=evaluecut;
 evalue = imadjust(evalue);
@@ -526,10 +528,11 @@ imshow(evalue,[]); %????????
 slct=get(handles.slice,'value');
 slice=volume(:,:,slct);
 slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-slice=slicecut;
+
+%slice=slicecut;
 axes(handles.axes5);
 %imshow(slice,[]);      %???????
-imagesc(slice);
+imagesc(slicecut);
 global cflag;%ture:cflag=1,operate on cut iamge
 cflag=1;
 global seed;
@@ -546,7 +549,7 @@ global volume;
 global evalue;
 global savevalue;
 if ~isempty(savevalue)
-evalue=savevalue{2};%forms some kind of stack
+    evalue=savevalue{2};%forms some kind of stack
 end
 axes(handles.axes);
 imshow(evalue,[]);
@@ -611,3 +614,29 @@ global myseed;  %used for plot
 label = label(2:end-1);
 seed = seed(2:end-1);
 myseed = myseed(:,1:end-2);
+
+
+% expand the segOutline to 3 pixels
+function [newsegOutline] = Expand(segOutline)
+%msgbox('a');
+%disp(segOutline);
+[m,n]=find(segOutline);
+center = [round(mean(m)),round(mean(n))];
+newsegOutline=segOutline;
+numofpixels=str2num(cell2mat(inputdlg('num of pixels(input 3 or 4)')));
+for i = 1:length(m(:))
+    if m(i)>=center(1)
+        if n(i)>=center(2)
+            newsegOutline(m(i):m(i)+numofpixels-1,n(i):n(i)+numofpixels-1)=1;
+        else
+            newsegOutline(m(i):m(i)+numofpixels-1,n(i)-numofpixels+1:n(i))=1;
+        end
+    else        
+        if n(i)>=center(2)
+            newsegOutline(m(i)-numofpixels+1:m(i),n(i):n(i)+numofpixels-1)=1;
+        else
+            newsegOutline(m(i)-numofpixels+1:m(i),n(i)-numofpixels+1:n(i))=1;
+        end
+    end
+end
+newsegOutline = newsegOutline-segOutline;
