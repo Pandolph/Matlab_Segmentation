@@ -22,7 +22,7 @@ function varargout = ImageSegmentation(varargin)%%do not edit
 
 % Edit the above text to modify the response to help ImageSegmentation
 
-% Last Modified by GUIDE v2.5 04-Nov-2015 14:14:37
+% Last Modified by GUIDE v2.5 16-Nov-2015 15:20:52
 
 % set(gcf,'units','normalized')%?????,??????????;
 
@@ -431,12 +431,29 @@ sflag=1;
 % plot(gray);title(vector);
 
 % D = bwdist(segOutline,'euclidean');
-% [px,py] = gradient(D);
+% [px,py] = gradient(D);  % for example px(2,1) = (D(3,1)+D(1,1))/2
 % figure;imagesc(D);
 % %axis([1,108,90,1]);
 % figure;contour(D);
-
-
+% vector = 5;
+% graymapIn = zeros(length(segOutline(1,:)),length(segOutline(:,1)));
+% graymapOut = graymapIn;
+% [x,y]=find(segOutline);
+% for i = 1:length(find(segOutline))    
+%     positionX = vector*px(x(i),y(i))+x(i);
+%     positionY = vector*py(x(i),y(i))+y(i);
+%     graymapOut(round(positionX), round(positionY)) = 1;
+%     positionX = (-1)*vector*px(x(i),y(i))+x(i);
+%     positionY = (-1)*vector*py(x(i),y(i))+y(i);
+%     graymapIn(round(positionX), round(positionY)) = 1;
+% end
+% figure;imshow(graymapOut);
+% figure;imshow(graymapIn);
+%  
+% for i = 1:length(find(segOutline))    
+%     posX(i) = px(x(i),y(i));
+%     posY(i) = py(x(i),y(i));
+% end
 
 
 % --- Executes on button press in average.
@@ -636,12 +653,12 @@ set(hObject,'box','on');
 % Hint: place code in OpeningFcn to populate axes5
 
 
-% --- Executes on button press in rollback.
-function rollback_Callback(hObject, eventdata, handles)
-% hObject    handle to rollback (see GCBO)
+% --- Executes on button press in expand.
+function expand_Callback(hObject, eventdata, handles)
+% hObject    handle to expand (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% global label;
+ global label;
 % global seed;
  global myseed;  %used for plot
 % label = label(2:end-1);
