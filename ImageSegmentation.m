@@ -128,7 +128,7 @@ for z = 1:z_size
     plane = series{z,1};
     volume(:,:,z) = plane;
 end
-volume = volume(:,:,1:4:end); % 1:green; 2:green-yellow; 3:nir; 4:sum% save_nii(make_nii(volume,[1 1 1], [0 0 0], 4),'B.nii.gz')
+volume = volume(:,:,2:4:end); % 1:green; 2:green-yellow; 3:nir; 4:sum% save_nii(make_nii(volume,[1 1 1], [0 0 0], 4),'B.nii.gz')
 sz=size(volume);
 set(handles.slice,'string', {1:1:sz(3)});%set the selection of popupmenu by number 1 to sz(3)
 global evalue;
@@ -212,55 +212,81 @@ global label;
 global seed;
 global evalue;
 global myseed;  %used for plot
-
+myseed= [];
+seed=[];
+label=[];
 [X,Y]=size(evalue);
-if ~isempty(label)
-    label = [0 label 1];
-    axes(handles.axes);
-    for i = 1:2
-        [x_p,y_p]=ginput(1);
-        x_p=floor(x_p);
-        y_p=floor(y_p);
-        hold on
-        if i == 1
-            plot(x_p,y_p,'r.','MarkerSize',5);
-            seed=[sub2ind([X Y],y_p,x_p),seed];
-            myseed = [myseed [0;x_p;y_p]];
-        else
-            plot(x_p,y_p,'g.','MarkerSize',5);
-            seed=[seed,sub2ind([X Y],y_p,x_p)];
-            myseed = [myseed [1;x_p;y_p]];
-        end
+
+% if ~isempty(label)
+%     label = [0 label 1];
+%     axes(handles.axes);
+%     for i = 1:2
+%         [x_p,y_p]=ginput(1);
+%         x_p=floor(x_p);
+%         y_p=floor(y_p);
+%         hold on
+%         if i == 1
+%             plot(x_p,y_p,'r.','MarkerSize',5);
+%             seed=[sub2ind([X Y],y_p,x_p),seed];
+%             myseed = [myseed [0;x_p;y_p]];
+%         else
+%             plot(x_p,y_p,'g.','MarkerSize',5);
+%             seed=[seed,sub2ind([X Y],y_p,x_p)];
+%             myseed = [myseed [1;x_p;y_p]];
+%         end
+%     end
+%     hold off
+% else
+%     i=0;
+%     n=4;%you can change the num of seeds
+%     myseed= [];
+%     seed=[];
+%     label=[0];
+%     N=ones(1,n-1);
+%     label=[label N];%first version, fixed 4 seeds and 2 types of labels.
+%     %str='Choose points on the round';
+%     %set(handles.edit3,'string',str);
+%     axes(handles.axes);
+%     while(i<n)
+%         [x_p,y_p]=ginput(1);
+%         x_p=floor(x_p);
+%         y_p=floor(y_p);
+%         hold on
+%         if i ==0
+%             plot(x_p,y_p,'r.','MarkerSize',5);
+%             myseed = [myseed [0;x_p;y_p]];
+%         else
+%             plot(x_p,y_p,'g.','MarkerSize',5);
+%             myseed = [myseed [1;x_p;y_p]];
+%         end
+%         seed=[seed,sub2ind([X Y],y_p,x_p)];
+%         i=i+1;
+%         %     pause(1);
+%     end
+%     %hold off
+% end
+
+numberOfPoints = inputdlg({'number of inside points','number of outside points','number of pixels'});
+%set the inside points 0, and put them in the front
+
+label = zeros(1,str2num(cell2mat(numberOfPoints(1))));
+label = [label,ones(1,str2num(cell2mat(numberOfPoints(2))))];
+
+for i = 1:length(label)
+    [x_p,y_p]=ginput(1);
+    x_p=floor(x_p);
+    y_p=floor(y_p);
+    hold on
+    if i <= str2num(cell2mat(numberOfPoints(1)))
+        plot(x_p,y_p,'r.','MarkerSize',5);
+        myseed = [myseed [0;x_p;y_p]];
+    else
+        
+        plot(x_p,y_p,'g.','MarkerSize',5);
+        myseed = [myseed [1;x_p;y_p]];
     end
     hold off
-else
-    i=0;
-    n=4;%you can change the num of seeds
-    myseed= [];
-    seed=[];
-    label=[0];
-    N=ones(1,n-1);
-    label=[label N];%first version, fixed 4 seeds and 2 types of labels.
-    %str='Choose points on the round';
-    %set(handles.edit3,'string',str);
-    axes(handles.axes);
-    while(i<n)
-        [x_p,y_p]=ginput(1);
-        x_p=floor(x_p);
-        y_p=floor(y_p);
-        hold on
-        if i ==0
-            plot(x_p,y_p,'r.','MarkerSize',5);
-            myseed = [myseed [0;x_p;y_p]];
-        else
-            plot(x_p,y_p,'g.','MarkerSize',5);
-            myseed = [myseed [1;x_p;y_p]];
-        end
-        seed=[seed,sub2ind([X Y],y_p,x_p)];
-        i=i+1;
-        %     pause(1);
-    end
-    %hold off
+    seed=[seed,sub2ind([X Y],y_p,x_p)];
 end
 
 global volume;
@@ -300,7 +326,8 @@ segOutline(:,end)=1;
 segOutline = ~segOutline;
 
 global newsegOutline;
-newsegOutline = Expand(segOutline);
+numofpixels=str2num(cell2mat(numberOfPoints(3)));
+newsegOutline = Expand(segOutline,numofpixels);
 axes(handles.axes);
 hold on
 outcome1=evalue+newsegOutline*max(max(evalue));
@@ -358,50 +385,50 @@ sflag=1;
 % %   a3(i)=sqrt(px(a2(1,i),a2(2,i))^2+py(a2(1,i),a2(2,i))^2);
 % end
 
-D = bwdist(segOutline,'euclidean');
-%[px,py] = gradient(D);
-for j = 1: 30
-    figure(10);
-    [c, h] = contour(D, [j, j]);  %temporaryly set v = 0;
-    axis equal;                     % equal axes
-    close(figure(10));
-    a1 = round(c);
-    a2 = a1(:,2:c(2,1)+1);
-    gray = zeros(length(segOutline(1,:)),length(segOutline(:,1)));
-    %vector = 0;
-    for i = 1:c(2,1)
-        %    positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
-        %    positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
-        positionX = a2(1,i);
-        positionY = a2(2,i);
-        gray (round(positionX), round(positionY)) = 1;
-    end
-    gray = flipud(gray);
-    gray = rot90(gray,3);
-    temp = evalue.*gray;
-    nonzerovalue = temp(find(temp));
-    nonzerovalue = nonzerovalue';
-    disp(['mean = ',num2str(mean(nonzerovalue)),' v =',num2str(j)]);
-    %figure;
-    %plot(nonzerovalue);
-    
-    if j == 1
-        numpixel = length(nonzerovalue);
-        finalmatrix = nonzerovalue;
-    else
-        newmatrix = 1:numpixel;
-        newmatrix = round(newmatrix*length(nonzerovalue)/numpixel);
-        newnonzerovalue = nonzerovalue(newmatrix);
-        finalmatrix = [finalmatrix;newnonzerovalue];
-    end
-    
-    %disp(num(find(temp)));
-end
-%disp(finalmatrix);
-figure;
-imshow(finalmatrix);
+% D = bwdist(segOutline,'euclidean');
+% [px,py] = gradient(D);
+% for j = 1: 30
+%     figure(10);
+%     axis equal;                     % equal axes
+%     close(figure(10));
+%     a1 = round(c);
+%     a2 = a1(:,2:c(2,1)+1);
+%     gray = zeros(length(segOutline(1,:)),length(segOutline(:,1)));
+%     vector = 0;
+%     for i = 1:c(2,1)
+%         positionX = vector*px(a2(1,i),a2(2,i))+a2(1,i);
+%         positionY = vector*py(a2(1,i),a2(2,i))+a2(2,i);
+%         %         positionX = a2(1,i);
+%         %         positionY = a2(2,i);
+%         gray (round(positionX), round(positionY)) = 1;
+%     end
+%     gray = flipud(gray);
+%     gray = rot90(gray,3);
+%     temp = evalue.*gray;
+%     nonzerovalue = temp(find(temp));
+%     nonzerovalue = nonzerovalue';
+%     disp(['mean = ',num2str(mean(nonzerovalue)),' v =',num2str(j)]);
+%     %figure;
+%     %plot(nonzerovalue);
+%     
+%     if j == 1
+%         numpixel = length(nonzerovalue);
+%         finalmatrix = nonzerovalue;
+%     else
+%         newmatrix = 1:numpixel;
+%         newmatrix = round(newmatrix*length(nonzerovalue)/numpixel);
+%         newnonzerovalue = nonzerovalue(newmatrix);
+%         finalmatrix = [finalmatrix;newnonzerovalue];
+%     end
+%     
+%     %disp(num(find(temp)));
+% end
+% 
+% %disp(finalmatrix);
+% figure;
+% imshow(finalmatrix);
 % for i = 1:c(2,1)
-% gray(i) = evalue(round(positionX), round(positionY));
+%     gray(i) = evalue(round(positionX), round(positionY));
 % end
 % plot(gray);title(vector);
 
@@ -617,13 +644,13 @@ myseed = myseed(:,1:end-2);
 
 
 % expand the segOutline to 3 pixels
-function [newsegOutline] = Expand(segOutline)
+function [newsegOutline] = Expand(segOutline,numofpixels)
 %msgbox('a');
 %disp(segOutline);
 [m,n]=find(segOutline);
 center = [round(mean(m)),round(mean(n))];
 newsegOutline=segOutline;
-numofpixels=str2num(cell2mat(inputdlg('num of pixels(input 3 or 4)')));
+
 for i = 1:length(m(:))
     if m(i)>=center(1)
         if n(i)>=center(2)
@@ -631,7 +658,7 @@ for i = 1:length(m(:))
         else
             newsegOutline(m(i):m(i)+numofpixels-1,n(i)-numofpixels+1:n(i))=1;
         end
-    else        
+    else
         if n(i)>=center(2)
             newsegOutline(m(i)-numofpixels+1:m(i),n(i):n(i)+numofpixels-1)=1;
         else
