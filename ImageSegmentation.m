@@ -325,12 +325,13 @@ segOutline(:,1)=1;
 segOutline(:,end)=1;
 segOutline = ~segOutline;
 
+global numofpixels;
 global newsegOutline;
 numofpixels=str2num(cell2mat(numberOfPoints(3)));
-newsegOutline = Expand(segOutline,numofpixels);
+%newsegOutline = Expand(segOutline,numofpixels);
 axes(handles.axes);
 hold on
-outcome1=evalue+newsegOutline*max(max(evalue));
+outcome1=evalue+segOutline*max(max(evalue));
 imshow(outcome1,[]);         %outline in original picture
 for i = 1:length(label)
     if myseed(1,i)==0
@@ -409,8 +410,7 @@ sflag=1;
 %     nonzerovalue = nonzerovalue';
 %     disp(['mean = ',num2str(mean(nonzerovalue)),' v =',num2str(j)]);
 %     %figure;
-%     %plot(nonzerovalue);
-%     
+%     %plot(nonzerovalue); 
 %     if j == 1
 %         numpixel = length(nonzerovalue);
 %         finalmatrix = nonzerovalue;
@@ -423,14 +423,20 @@ sflag=1;
 %     
 %     %disp(num(find(temp)));
 % end
-% 
-% %disp(finalmatrix);
 % figure;
 % imshow(finalmatrix);
 % for i = 1:c(2,1)
 %     gray(i) = evalue(round(positionX), round(positionY));
 % end
 % plot(gray);title(vector);
+
+% D = bwdist(segOutline,'euclidean');
+% [px,py] = gradient(D);
+% figure;imagesc(D);
+% %axis([1,108,90,1]);
+% figure;contour(D);
+
+
 
 
 % --- Executes on button press in average.
@@ -635,12 +641,29 @@ function rollback_Callback(hObject, eventdata, handles)
 % hObject    handle to rollback (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global label;
-global seed;
-global myseed;  %used for plot
-label = label(2:end-1);
-seed = seed(2:end-1);
-myseed = myseed(:,1:end-2);
+% global label;
+% global seed;
+ global myseed;  %used for plot
+% label = label(2:end-1);
+% seed = seed(2:end-1);
+% myseed = myseed(:,1:end-2);
+global segOutline;
+global numofpixels;
+global newsegOutline;
+global evalue;
+newsegOutline = Expand(segOutline,numofpixels);
+axes(handles.axes);
+hold on
+outcome1=evalue+newsegOutline*max(max(evalue));
+imshow(outcome1,[]);         %outline in original picture
+for i = 1:length(label)
+    if myseed(1,i)==0
+        plot(myseed(2,i),myseed(3,i),'r.','MarkerSize',5);
+    else
+        plot(myseed(2,i),myseed(3,i),'g.','MarkerSize',5);
+    end
+end
+hold off
 
 
 % expand the segOutline to 3 pixels
