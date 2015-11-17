@@ -22,7 +22,7 @@ function varargout = ImageSegmentation(varargin)%%do not edit
 
 % Edit the above text to modify the response to help ImageSegmentation
 
-% Last Modified by GUIDE v2.5 16-Nov-2015 15:20:52
+% Last Modified by GUIDE v2.5 17-Nov-2015 20:49:31
 
 % set(gcf,'units','normalized')%?????,??????????;
 
@@ -266,7 +266,7 @@ label=[];
 %     %hold off
 % end
 
-numberOfPoints = inputdlg({'number of inside points','number of outside points','number of pixels'});
+numberOfPoints = inputdlg({'number of inside points','number of outside points'});
 %set the inside points 0, and put them in the front
 
 label = zeros(1,str2num(cell2mat(numberOfPoints(1))));
@@ -327,7 +327,7 @@ segOutline = ~segOutline;
 
 global numofpixels;
 global newsegOutline;
-numofpixels=str2num(cell2mat(numberOfPoints(3)));
+%numofpixels=str2num(cell2mat(numberOfPoints(3)));
 %newsegOutline = Expand(segOutline,numofpixels);
 axes(handles.axes);
 hold on
@@ -430,6 +430,7 @@ sflag=1;
 % end
 % plot(gray);title(vector);
 
+
 % D = bwdist(segOutline,'euclidean');
 % [px,py] = gradient(D);  % for example px(2,1) = (D(3,1)+D(1,1))/2
 % figure;imagesc(D);
@@ -438,6 +439,7 @@ sflag=1;
 % vector = 5;
 % graymapIn = zeros(length(segOutline(1,:)),length(segOutline(:,1)));
 % graymapOut = graymapIn;
+% 
 % [x,y]=find(segOutline);
 % for i = 1:length(find(segOutline))    
 %     positionX = vector*px(x(i),y(i))+x(i);
@@ -454,6 +456,9 @@ sflag=1;
 %     posX(i) = px(x(i),y(i));
 %     posY(i) = py(x(i),y(i));
 % end
+% figure;imshow(neighborIn);
+% figure;imshow(segOutline);
+% figure;imshow(neighborOut);
 
 
 % --- Executes on button press in average.
@@ -461,7 +466,7 @@ function average_Callback(hObject, eventdata, handles)
 % hObject    handle to average (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global segOutline;
+%global segOutline;
 global volume;
 global cflag;
 global rect;
@@ -668,6 +673,7 @@ global segOutline;
 global numofpixels;
 global newsegOutline;
 global evalue;
+numofpixels = str2num(get(handles.ExpandNum,'String'));
 newsegOutline = Expand(segOutline,numofpixels);
 axes(handles.axes);
 hold on
@@ -683,7 +689,47 @@ end
 hold off
 
 
-% expand the segOutline to 3 pixels
+% --- Executes during object creation, after setting all properties.
+function ExpandNum_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ExpandNum (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+set(hObject,'String',3);
+
+
+% --- Executes on button press in Contrast.
+function Contrast_Callback(hObject, eventdata, handles)
+% hObject    handle to Contrast (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global volume;
+global cflag;
+global rect;
+global segOutline;
+slct=get(handles.slice,'value');
+slice=volume(:,:,slct);
+if cflag==1
+    slicecut=slice(rect(1):rect(2),rect(3):rect(4));
+    slice=slicecut;
+end
+
+neighborIn = Expand(segOutline,-1);
+neighborOut = Expand(segOutline,1);
+valueIn=sum(neighborIn.*slice)/sum(neighborIn);
+valueOut=sum(neighborOut.*slice)/sum(neighborOut);
+contrast = valueOut/valueIn;
+set(handles.ContrastValue, 'String', num2str(contrast)); % 0 means black and 1 means white
+set(handles.contrastIn, 'String', num2str(valueIn));
+set(handles.contrastOut, 'String', num2str(valueOut));
+
+
+% expand the segOutline to several pixels
 function [newsegOutline] = Expand(segOutline,numofpixels)
 %msgbox('a');
 %disp(segOutline);
@@ -694,16 +740,33 @@ newsegOutline=segOutline;
 for i = 1:length(m(:))
     if m(i)>=center(1)
         if n(i)>=center(2)
-            newsegOutline(m(i):m(i)+numofpixels-1,n(i):n(i)+numofpixels-1)=1;
+            if numofpixels > 0
+                newsegOutline(m(i):m(i)+numofpixels,n(i):n(i)+numofpixels)=1;
+            else
+                newsegOutline(m(i)+numofpixels:m(i),n(i)+numofpixels:n(i))=1;
+            end
         else
-            newsegOutline(m(i):m(i)+numofpixels-1,n(i)-numofpixels+1:n(i))=1;
+            if numofpixels > 0
+                newsegOutline(m(i):m(i)+numofpixels,n(i)-numofpixels:n(i))=1;
+            else
+                newsegOutline(m(i)+numofpixels:m(i),n(i):n(i)-numofpixels)=1;
+            end
         end
     else
         if n(i)>=center(2)
-            newsegOutline(m(i)-numofpixels+1:m(i),n(i):n(i)+numofpixels-1)=1;
+            if numofpixels > 0
+                newsegOutline(m(i)-numofpixels:m(i),n(i):n(i)+numofpixels)=1;
+            else
+                newsegOutline(m(i):m(i)-numofpixels,n(i)+numofpixels:n(i))=1;
+            end
         else
-            newsegOutline(m(i)-numofpixels+1:m(i),n(i)-numofpixels+1:n(i))=1;
+            if numofpixels > 0
+                newsegOutline(m(i)-numofpixels:m(i),n(i)-numofpixels:n(i))=1;
+            else
+                newsegOutline(m(i):m(i)-numofpixels,n(i):n(i)-numofpixels)=1;
+            end
         end
     end
 end
 newsegOutline = newsegOutline-segOutline;
+
