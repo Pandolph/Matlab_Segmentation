@@ -22,7 +22,7 @@ function varargout = ImageSegmentation(varargin)%%do not edit
 
 % Edit the above text to modify the response to help ImageSegmentation
 
-% Last Modified by GUIDE v2.5 17-Nov-2015 20:49:31
+% Last Modified by GUIDE v2.5 18-Nov-2015 23:37:44
 
 % set(gcf,'units','normalized')%?????,??????????;
 
@@ -266,7 +266,8 @@ label=[];
 %     %hold off
 % end
 
-numberOfPoints = inputdlg({'number of inside points','number of outside points'});
+%numberOfPoints = inputdlg({'number of inside points','number of outside points'});
+numberOfPoints = {get(handles.numPoints, 'String'),get(handles.numPoints, 'String')};
 %set the inside points 0, and put them in the front
 
 label = zeros(1,str2num(cell2mat(numberOfPoints(1))));
@@ -627,11 +628,15 @@ rect=[1,sz(2),1,sz(1)];
 global sflag;
 sflag=0;
 
-savevalue=savevalue{1};
+savevalue=savevalue(1);
 global label;
 global seed;
 label =[0];
 seed=[];
+set(handles.ContrastValue, 'String', 'contrast'); % 0 means black and 1 means white
+set(handles.contrastIn, 'String', 'valuein-1');
+set(handles.contrastOut, 'String', 'valuein1');
+set(handles.text6,'string', 'value');
 
 
 % --- Executes during object creation, after setting all properties.
@@ -712,18 +717,23 @@ global volume;
 global cflag;
 global rect;
 global segOutline;
-slct=get(handles.slice,'value');
-slice=volume(:,:,slct);
-if cflag==1
-    slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-    slice=slicecut;
-end
-
 neighborIn = Expand(segOutline,-1);
 neighborOut = Expand(segOutline,1);
-valueIn=sum(neighborIn.*slice)/sum(neighborIn);
-valueOut=sum(neighborOut.*slice)/sum(neighborOut);
-contrast = valueOut/valueIn;
+
+valueIn = 0;
+valueOut = 0;
+for i = 1:length(volume(1,1,:))
+    if cflag==1
+        slice=volume(:,:,i);
+        slicecut=slice(rect(1):rect(2),rect(3):rect(4));
+        slice=slicecut;
+    end
+valueIn=valueIn+sum(neighborIn.*slice)/sum(neighborIn);
+valueOut=valueOut+sum(neighborOut.*slice)/sum(neighborOut);
+end
+valueIn=valueIn/length(volume(1,1,:));
+valueOut=valueOut/length(volume(1,1,:));
+contrast = (valueOut-valueIn)/valueIn;
 set(handles.ContrastValue, 'String', num2str(contrast)); % 0 means black and 1 means white
 set(handles.contrastIn, 'String', num2str(valueIn));
 set(handles.contrastOut, 'String', num2str(valueOut));
@@ -770,3 +780,36 @@ for i = 1:length(m(:))
 end
 newsegOutline = newsegOutline-segOutline;
 
+
+
+function ExpandNum_Callback(hObject, eventdata, handles)
+% hObject    handle to ExpandNum (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of ExpandNum as text
+%        str2double(get(hObject,'String')) returns contents of ExpandNum as a double
+
+
+
+function numPoints_Callback(hObject, eventdata, handles)
+% hObject    handle to numPoints (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of numPoints as text
+%        str2double(get(hObject,'String')) returns contents of numPoints as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function numPoints_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to numPoints (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+set(hObject,'String',5);
