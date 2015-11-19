@@ -22,7 +22,7 @@ function varargout = ImageSegmentation(varargin)%%do not edit
 
 % Edit the above text to modify the response to help ImageSegmentation
 
-% Last Modified by GUIDE v2.5 18-Nov-2015 23:37:44
+% Last Modified by GUIDE v2.5 19-Nov-2015 16:44:41
 
 % set(gcf,'units','normalized')%?????,??????????;
 
@@ -121,14 +121,15 @@ series = data{1, 1};
 x_size = size(series{1,1},1);%series{1,1} first cell(picture)
 y_size = size(series{1,1},2);
 z_size = size(series,1);%series includes 128 cells(picture)
-global volume;
-volume = zeros(x_size,y_size,z_size);%build a container
+global volumeAll;
+volumeAll = zeros(x_size,y_size,z_size);%build a container
 
 for z = 1:z_size
     plane = series{z,1};
-    volume(:,:,z) = plane;
+    volumeAll(:,:,z) = plane;
 end
-volume = volume(:,:,2:4:end); % 1:green; 2:green-yellow; 3:nir; 4:sum% save_nii(make_nii(volume,[1 1 1], [0 0 0], 4),'B.nii.gz')
+global volume;
+volume = volumeAll(:,:,2:4:end); % 1:green; 2:green-yellow; 3:nir; 4:sum% save_nii(make_nii(volume,[1 1 1], [0 0 0], 4),'B.nii.gz')
 sz=size(volume);
 set(handles.slice,'string', {1:1:sz(3)});%set the selection of popupmenu by number 1 to sz(3)
 global evalue;
@@ -468,12 +469,14 @@ function average_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 %global segOutline;
-global volume;
+
+global volumeAll;
 global cflag;
 global rect;
 global newsegOutline;
+volumeAverage = volumeAll(:,:,1:4:end);
 slct=get(handles.slice,'value');
-slice=volume(:,:,slct);
+slice=volumeAverage(:,:,slct);
 if cflag==1
     slicecut=slice(rect(1):rect(2),rect(3):rect(4));
     slice=slicecut;
@@ -482,9 +485,9 @@ end
 num=sum(newsegOutline);
 value=sum(newsegOutline.*slice)/num;
 set(handles.text6,'string', num2str(value));
-for i = 1:length(volume(1,1,:))
+for i = 1:length(volumeAverage(1,1,:))
     if cflag==1
-        slice=volume(:,:,i);
+        slice=volumeAverage(:,:,i);
         slicecut=slice(rect(1):rect(2),rect(3):rect(4));
         slice=slicecut;
     end
@@ -634,8 +637,8 @@ global seed;
 label =[0];
 seed=[];
 set(handles.ContrastValue, 'String', 'contrast'); % 0 means black and 1 means white
-set(handles.contrastIn, 'String', 'valuein-1');
-set(handles.contrastOut, 'String', 'valuein1');
+set(handles.contrastIn, 'String', 'valueinside');
+set(handles.contrastOut, 'String', 'valueoutside');
 set(handles.text6,'string', 'value');
 
 
@@ -713,26 +716,22 @@ function Contrast_Callback(hObject, eventdata, handles)
 % hObject    handle to Contrast (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global volume;
+global volumeAll;
 global cflag;
 global rect;
 global segOutline;
-neighborIn = Expand(segOutline,-1);
-neighborOut = Expand(segOutline,1);
-
-valueIn = 0;
-valueOut = 0;
-for i = 1:length(volume(1,1,:))
-    if cflag==1
-        slice=volume(:,:,i);
-        slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-        slice=slicecut;
-    end
-valueIn=valueIn+sum(neighborIn.*slice)/sum(neighborIn);
-valueOut=valueOut+sum(neighborOut.*slice)/sum(neighborOut);
+volumeContrast = volumeAll(:,:,1:4:end);
+inside = str2num(get(handles.valueInside,'String'));
+outside = str2num(get(handles.valueOutside,'String'));
+neighborIn = Expand(segOutline,inside)-Expand(segOutline,inside+1);
+neighborOut = Expand(segOutline,outside)-Expand(segOutline,outside-1);
+if cflag==1
+    slice=volumeContrast(:,:,double(get(handles.slice, 'Value')));
+    slicecut=slice(rect(1):rect(2),rect(3):rect(4));
+    slice=slicecut;
 end
-valueIn=valueIn/length(volume(1,1,:));
-valueOut=valueOut/length(volume(1,1,:));
+valueIn=sum(neighborIn.*slice)/sum(neighborIn);
+valueOut=sum(neighborOut.*slice)/sum(neighborOut);
 contrast = (valueOut-valueIn)/valueIn;
 set(handles.ContrastValue, 'String', num2str(contrast)); % 0 means black and 1 means white
 set(handles.contrastIn, 'String', num2str(valueIn));
@@ -813,3 +812,49 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 set(hObject,'String',5);
+
+
+
+function valueInside_Callback(hObject, eventdata, handles)
+% hObject    handle to valueInside (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of valueInside as text
+%        str2double(get(hObject,'String')) returns contents of valueInside as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function valueInside_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to valueInside (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function valueOutside_Callback(hObject, eventdata, handles)
+% hObject    handle to valueOutside (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of valueOutside as text
+%        str2double(get(hObject,'String')) returns contents of valueOutside as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function valueOutside_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to valueOutside (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
