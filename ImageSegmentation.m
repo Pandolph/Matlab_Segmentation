@@ -22,7 +22,7 @@ function varargout = ImageSegmentation(varargin)%%do not edit
 
 % Edit the above text to modify the response to help ImageSegmentation
 
-% Last Modified by GUIDE v2.5 19-Nov-2015 16:44:41
+% Last Modified by GUIDE v2.5 19-Jan-2018 01:19:43
 
 % set(gcf,'units','normalized')%?????,??????????;
 
@@ -114,22 +114,45 @@ function openfile_ClickedCallback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 %str='Opening...Please wait.';
 %set(handles.edit3,'string',str);
-[filename, pathname] = uigetfile('*.nd2','select the .nd2 file');
-data = bfopen([ pathname,filename]);
-series = data{1, 1};
+[~,PathName] = uigetfile('*.tif','Select the file');
+channel = '1';
+if strcmp(channel, 'all')
+    Files = dir(fullfile(PathName,'*.tif'));
+elseif strcmp(channel,  'part')
+    Files1 = dir(fullfile(PathName,['*','.tif']));
+    prompt = {'Start','End'};
+    dlg_title = 'Input';
+    num_lines = 1;
+    defaultans = {'1','100'};
+    answer = inputdlg(prompt,dlg_title,num_lines,defaultans);
+    Files = Files1([str2num(answer{1,1}):str2num(answer{2,1})],1);
+else
+    Files = dir(fullfile(PathName,['*',num2str(channel),'.tif']));
+end
+place = [PathName,Files(1).name];
+tif = imread(place); % z = 156 slices, x = 437 or tif(:,1,1), y = 1379 or tif(1,:,1)
+sliceSize = length(Files(:,1));
+Data = ones(length(tif(:,1,1)),length(tif(1,:,1)),sliceSize);
+for k = 1:sliceSize
+    place = [PathName,Files(k,1).name];
+    tif = imread(place);
+    Data(:,:,k) = tif(:,:,find(mean(mean(tif,1),2)));
+end
 
-x_size = size(series{1,1},1);%series{1,1} first cell(picture)
-y_size = size(series{1,1},2);
-z_size = size(series,1);%series includes 128 cells(picture)
+Crop = Data;
+
+x_size = size(Crop,1);%series{1,1} first cell(picture)
+y_size = size(Crop,2);
+z_size = size(Crop,3);%series includes 128 cells(picture)
 global volumeAll;
 volumeAll = zeros(x_size,y_size,z_size);%build a container
 
 for z = 1:z_size
-    plane = series{z,1};
+    plane = Crop(:,:,z);
     volumeAll(:,:,z) = plane;
 end
 global volume;
-volume = volumeAll(:,:,2:4:end); % 1:green; 2:green-yellow; 3:nir; 4:sum% save_nii(make_nii(volume,[1 1 1], [0 0 0], 4),'B.nii.gz')
+volume = volumeAll(:,:,:); % 1:green; 2:green-yellow; 3:nir; 4:sum% save_nii(make_nii(volume,[1 1 1], [0 0 0], 4),'B.nii.gz')
 sz=size(volume);
 set(handles.slice,'string', {1:1:sz(3)});%set the selection of popupmenu by number 1 to sz(3)
 global evalue;
@@ -332,9 +355,15 @@ global newsegOutline;
 %numofpixels=str2num(cell2mat(numberOfPoints(3)));
 %newsegOutline = Expand(segOutline,numofpixels);
 axes(handles.axes);
+
+
 hold on
+
+
 outcome1=evalue+segOutline*max(max(evalue));
 imshow(outcome1,[]);         %outline in original picture
+
+
 for i = 1:length(label)
     if myseed(1,i)==0
         plot(myseed(2,i),myseed(3,i),'r.','MarkerSize',5);
@@ -463,7 +492,7 @@ sflag=1;
 % figure;imshow(neighborOut);
 
 
-% --- Executes on button press in average.
+% --- Executes on button press in average. Line
 function average_Callback(hObject, eventdata, handles)
 % hObject    handle to average (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -474,29 +503,24 @@ global volumeAll;
 global cflag;
 global rect;
 global newsegOutline;
-volumeAverage = volumeAll(:,:,1:4:end);
-slct=get(handles.slice,'value');
-slice=volumeAverage(:,:,slct);
-if cflag==1
-    slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-    slice=slicecut;
-end
+Crop = volumeAll;
+num_hist = 10; % the slice for histmatch
+x = 9;
+outHist = HistMatch(Crop,num_hist);%figure;imshow(outHist(:,:,x),[])
+Col = ColumnMatch(outHist);%figure;imshow(Col(:,:,x),[])
+filter_size =5; % the size of filer in the preprosessing to denoise
+filter_num =1; % how many times the filter is applied
+bi_threshold = 0.1; %the threshhold of binarization, larger means fewer area left
+Bi = MeanBi(Col,bi_threshold,filter_num,filter_size);%figure;imshow(Bi(:,:,x),[])
+BiVessel = bwareaopen(Bi,40,8);
+se = strel('disk',7);
+I = imdilate(BiVessel,se);
+vessel = imerode(I,se);
+save('vessel.mat','vessel')
+axes(handles.axes);
+imshow(vessel(:,:,x),[])
 
-num=sum(newsegOutline);
-value=sum(newsegOutline.*slice)/num;
-set(handles.text6,'string', num2str(value));
-for i = 1:length(volumeAverage(1,1,:))
-    if cflag==1
-        slice=volumeAverage(:,:,i);
-        slicecut=slice(rect(1):rect(2),rect(3):rect(4));
-        slice=slicecut;
-    end
-    txt(i,2)= sum(newsegOutline.*slice)/num;
-    txt(i,1)= i;
-end
-fid = fopen('average.txt','wt');
-fprintf(fid,'%g\n',txt); %\n means next line
-fclose(fid);
+
 
 % --- Executes on button press in back.
 function back_Callback(hObject, eventdata, handles)
@@ -666,7 +690,7 @@ set(hObject,'box','on');
 % Hint: place code in OpeningFcn to populate axes5
 
 
-% --- Executes on button press in expand.
+% --- Executes on button press in expand.  Sphere
 function expand_Callback(hObject, eventdata, handles)
 % hObject    handle to expand (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -681,20 +705,26 @@ global segOutline;
 global numofpixels;
 global newsegOutline;
 global evalue;
-numofpixels = str2num(get(handles.ExpandNum,'String'));
-newsegOutline = Expand(segOutline,numofpixels);
+global volumeAll
+Crop = volumeAll;
+num_hist = 50;
+outHist = HistMatch(Crop,num_hist);
+%Col = ColumnMatch(outHist);
+figure;imshow(outHist(:,:,1),[]);
+
+filter_size =3;
+filter_num =3;
+bi_threshold = 0.45; % most important, larger means fewer left
+Bi = MeanBi(outHist,bi_threshold,filter_num,filter_size);
+figure;imshow(Bi(:,:,1));
+
+area_size = 20; % delete the area whose size is smaller than area_size
+se_size = 3;
+cell = Cell(Bi,area_size,se_size);
+save('microglia.mat','cell')
 axes(handles.axes);
-hold on
-outcome1=evalue+newsegOutline*max(max(evalue));
-imshow(outcome1,[]);         %outline in original picture
-for i = 1:length(label)
-    if myseed(1,i)==0
-        plot(myseed(2,i),myseed(3,i),'r.','MarkerSize',5);
-    else
-        plot(myseed(2,i),myseed(3,i),'g.','MarkerSize',5);
-    end
-end
-hold off
+imshow(cell,[])
+
 
 
 % --- Executes during object creation, after setting all properties.
@@ -858,3 +888,28 @@ function valueOutside_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in Cyliner.
+function Cyliner_Callback(hObject, eventdata, handles)
+% hObject    handle to Cyliner (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global volumeAll
+Crop = volumeAll;
+num_hist = 30; % choose the cleareat one
+outHist = HistMatch(Crop,num_hist);
+%Col = ColumnMatch(outHist);
+figure;imshow(Crop(:,:,1),[])
+filter_size =2;
+filter_num =6;
+bi_threshold = 0.3; % most important, larger means fewer left
+Bi = MeanBi(outHist,bi_threshold,filter_num,filter_size);
+figure;imshow(Bi(:,:,1),[])
+
+se = strel('disk',6);
+temp = imerode(Bi,se);
+myelin = imdilate(temp,se);
+save('myelin.mat','myelin')
+axes(handles.axes);
+imshow(myelin,[])
